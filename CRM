@@ -1,0 +1,210 @@
+import React, { useState, useEffect } from 'react';
+import { LayoutDashboard, Users, Plus, ChevronRight, ChevronLeft, Trash2 } from 'lucide-react';
+
+// --- Initial Data ---
+const initialTasks = [
+  { id: 1, text: 'איתור ומינוי עו"ד נאמנות (ישראל)', stage: 'legal' },
+  { id: 2, text: 'התאגדות ופתיחת חשבון בבאקו', stage: 'legal' },
+  { id: 3, text: 'הכנת מצגת משקיעים (Pitch Deck)', stage: 'marketing' },
+  { id: 4, text: 'חתימת MOU מול קבלנים ב-Sea Breeze', stage: 'baku' },
+  { id: 5, text: 'סגירת ספקי אירוח ומלונאות לסיורים', stage: 'baku' },
+  { id: 6, text: 'סבב פגישות שטח במשרדי תיווך', stage: 'b2b' },
+];
+
+const initialBrokers = [
+  { id: 1, name: 'רימקס העיר - טייבה', contact: 'אחמד', stage: 'contacted' },
+  { id: 2, name: 'סוכנות נדל"ן הצפון - נצרת', contact: 'סמיר', stage: 'lead' },
+  { id: 3, name: 'VIP השקעות - חיפה', contact: 'מוחמד', stage: 'mou' },
+  { id: 4, name: 'אמין נדל"ן בע"מ', contact: 'אמין', stage: 'active' },
+];
+
+const taskStages = [
+  { id: 'legal', title: 'תשתית משפטית' },
+  { id: 'marketing', title: 'שיווק וטכנולוגיה' },
+  { id: 'baku', title: 'אופרציה באקו' },
+  { id: 'b2b', title: 'גיוס מתווכים' },
+  { id: 'pilot', title: 'סיור פיילוט' },
+];
+
+const brokerStages = [
+  { id: 'lead', title: 'ליד חדש' },
+  { id: 'contacted', title: 'יצירת קשר' },
+  { id: 'pitched', title: 'פגישת פיץ\'' },
+  { id: 'mou', title: 'בחינת הסכם (MOU)' },
+  { id: 'active', title: 'שותף פעיל' },
+];
+
+export default function OrizisSystem() {
+  const [activeTab, setActiveTab] = useState('tasks');
+  const [tasks, setTasks] = useState([]);
+  const [brokers, setBrokers] = useState([]);
+  const [newItemText, setNewItemText] = useState('');
+
+  // Load from LocalStorage on mount
+  useEffect(() => {
+    const savedTasks = localStorage.getItem('orizis_tasks');
+    const savedBrokers = localStorage.getItem('orizis_brokers');
+    if (savedTasks) setTasks(JSON.parse(savedTasks));
+    else setTasks(initialTasks);
+    if (savedBrokers) setBrokers(JSON.parse(savedBrokers));
+    else setBrokers(initialBrokers);
+  }, []);
+
+  // Save to LocalStorage on change
+  useEffect(() => {
+    localStorage.setItem('orizis_tasks', JSON.stringify(tasks));
+    localStorage.setItem('orizis_brokers', JSON.stringify(brokers));
+  }, [tasks, brokers]);
+
+  const moveItem = (type, id, direction) => {
+    if (type === 'task') {
+      const currentTask = tasks.find((t) => t.id === id);
+      const currentIndex = taskStages.findIndex((s) => s.id === currentTask.stage);
+      const newIndex = currentIndex + direction;
+      if (newIndex >= 0 && newIndex < taskStages.length) {
+        setTasks(tasks.map((t) => (t.id === id ? { ...t, stage: taskStages[newIndex].id } : t)));
+      }
+    } else {
+      const currentBroker = brokers.find((b) => b.id === id);
+      const currentIndex = brokerStages.findIndex((s) => s.id === currentBroker.stage);
+      const newIndex = currentIndex + direction;
+      if (newIndex >= 0 && newIndex < brokerStages.length) {
+        setBrokers(brokers.map((b) => (b.id === id ? { ...b, stage: brokerStages[newIndex].id } : b)));
+      }
+    }
+  };
+
+  const deleteItem = (type, id) => {
+    if (type === 'task') setTasks(tasks.filter((t) => t.id !== id));
+    else setBrokers(brokers.filter((b) => b.id !== id));
+  };
+
+  const addNewItem = (e) => {
+    e.preventDefault();
+    if (!newItemText.trim()) return;
+    
+    if (activeTab === 'tasks') {
+      const newTask = { id: Date.now(), text: newItemText, stage: 'legal' };
+      setTasks([...tasks, newTask]);
+    } else {
+      const newBroker = { id: Date.now(), name: newItemText, contact: 'איש קשר', stage: 'lead' };
+      setBrokers([...brokers, newBroker]);
+    }
+    setNewItemText('');
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 text-gray-800 font-sans" dir="rtl">
+      {/* Header */}
+      <header className="bg-slate-900 text-white p-4 shadow-md">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div>
+            <h1 className="text-2xl font-bold tracking-wider">ORIZIS</h1>
+            <p className="text-sm text-slate-400">Azerbaijan Real Estate Operations</p>
+          </div>
+          <div className="flex gap-4">
+            <button
+              onClick={() => setActiveTab('tasks')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                activeTab === 'tasks' ? 'bg-blue-600' : 'hover:bg-slate-800'
+              }`}
+            >
+              <LayoutDashboard size={20} />
+              לוח משימות אופרטיבי
+            </button>
+            <button
+              onClick={() => setActiveTab('brokers')}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                activeTab === 'brokers' ? 'bg-blue-600' : 'hover:bg-slate-800'
+              }`}
+            >
+              <Users size={20} />
+              CRM מתווכים
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto p-6">
+        {/* Add New Item Form */}
+        <form onSubmit={addNewItem} className="mb-8 flex gap-4 bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <input
+            type="text"
+            value={newItemText}
+            onChange={(e) => setNewItemText(e.target.value)}
+            placeholder={activeTab === 'tasks' ? "הוסף משימה חדשה..." : "הוסף משרד תיווך חדש..."}
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
+          >
+            <Plus size={20} />
+            הוסף
+          </button>
+        </form>
+
+        {/* Board */}
+        <div className="flex gap-6 overflow-x-auto pb-4">
+          {(activeTab === 'tasks' ? taskStages : brokerStages).map((stage, stageIndex) => (
+            <div key={stage.id} className="min-w-[280px] flex-1 bg-gray-100 rounded-lg p-4 flex flex-col h-[70vh]">
+              <div className="flex justify-between items-center mb-4 border-b border-gray-300 pb-2">
+                <h3 className="font-semibold text-gray-700">{stage.title}</h3>
+                <span className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">
+                  {activeTab === 'tasks'
+                    ? tasks.filter((t) => t.stage === stage.id).length
+                    : brokers.filter((b) => b.stage === stage.id).length}
+                </span>
+              </div>
+
+              <div className="flex-1 overflow-y-auto flex flex-col gap-3">
+                {(activeTab === 'tasks' ? tasks : brokers)
+                  .filter((item) => item.stage === stage.id)
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      className="bg-white p-4 rounded-md shadow-sm border border-gray-200 group hover:border-blue-300 transition-colors"
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <p className="text-sm font-medium text-gray-800">
+                          {activeTab === 'tasks' ? item.text : item.name}
+                        </p>
+                        <button
+                          onClick={() => deleteItem(activeTab.slice(0, -1), item.id)}
+                          className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                      
+                      {activeTab === 'brokers' && (
+                        <p className="text-xs text-gray-500 mb-3">איש קשר: {item.contact}</p>
+                      )}
+
+                      <div className="flex justify-between mt-2 pt-2 border-t border-gray-50">
+                        <button
+                          disabled={stageIndex === 0}
+                          onClick={() => moveItem(activeTab.slice(0, -1), item.id, -1)}
+                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30"
+                        >
+                          <ChevronRight size={18} />
+                        </button>
+                        <button
+                          disabled={stageIndex === (activeTab === 'tasks' ? taskStages.length : brokerStages.length) - 1}
+                          onClick={() => moveItem(activeTab.slice(0, -1), item.id, 1)}
+                          className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded disabled:opacity-30"
+                        >
+                          <ChevronLeft size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </main>
+    </div>
+  );
+}
